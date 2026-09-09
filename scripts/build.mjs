@@ -30,7 +30,10 @@ await build({
   target: 'es2022',
   external: ['react', 'react-dom', '@deepseek-ai/dsh-client-ui-primitives'],
   outfile: 'client/client.js',
-  banner: { js: `window.__ModuleLoader__.load({ id: ${JSON.stringify(LOADER_ID)}, factory: (require, module, exports) => {` },
+  // dshmarket parity: the loader calls factory(require) with ONE argument —
+  // module/exports are created inside the factory body (see dshmarket's
+  // bundled client/client.js header).
+  banner: { js: `window.__ModuleLoader__.load({ id: ${JSON.stringify(LOADER_ID)}, factory: (require) => {\nvar module = { exports: {} };\nvar exports = module.exports;` },
   footer: { js: 'return module.exports; } });' },
 })
 
