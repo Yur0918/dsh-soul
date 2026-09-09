@@ -5,7 +5,7 @@
   "type": "module",
   "main": "lib/plugin.js",
   "scripts": {
-    "build": "tsc -p tsconfig.json --noEmit && esbuild src/plugin.ts --bundle --platform=node --format=esm --outfile=lib/plugin.js",
+    "build": "node scripts/build.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run"
   },
@@ -37,17 +37,26 @@
   },
   "exports": {
     ".": "./lib/plugin.js",
-    "./index": "./lib/index.js",
+    "./client": "./client/client.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
     "./package.json": "./package.json"
   },
   "dsh": {
     "bundle": {
-      "patch": "./cordis.patch.yml",
-      "entry": "src/plugin.ts"
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-settings"
+      ],
+      "platform": "web"
     },
     "plugin": {
       "name": "dsh-soul",
-      "inject": []
+      "inject": [
+        "commands",
+        "webServer"
+      ]
     }
   }
 }
