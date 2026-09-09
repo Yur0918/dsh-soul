@@ -6,6 +6,8 @@ dsh-soul × dsh-soul-md 融合增强插件：**人设卡 + 记忆 + 审计 + 自
 
 ## 开发状态
 
+**已验证（2026-09-09，dsh web 0.1.1-rc.2）**：设置页「个性化」分区保存 `style=roast` 经 `/dsh-soul/config` 生效（日志 `config saved via HTTP (style=roast)`）；prompt 段 `soul:persona`/`soul:memory` 惰性注册、下一次回复生效。
+
 | 项目 | 状态 |
 |---|---|
 | 核心逻辑单元测试 | ✅ **62 / 62 通过**（6 个测试文件：styles / compilePrompt / validate / migrate / confirm / audit） |
