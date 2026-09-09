@@ -4,4 +4,4 @@
 # by the host entry (lib/plugin.js, package.json main).
 - insert:
     - id: soul
-      name: '@yur/dsh-soul'
+      name: '@yur0918/dsh-soul'
