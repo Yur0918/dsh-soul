@@ -1,0 +1,6 @@
+# dsh-soul v2 (SoulFusion) — persona/memory prompt sections (skeleton assembly).
+# Registered by `dsh plugin --profile web add file:<path>`; keep the id `soul`
+# so it occupies the same section namespace as dsh-soul v1 (single soul:persona).
+- insert:
+    - id: soul
+      name: dsh-soul

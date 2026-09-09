@@ -1,0 +1,53 @@
+{
+  "name": "dsh-soul",
+  "version": "2.0.0",
+  "description": "SoulFusion —— dsh-soul v2：融合人设卡 / 记忆 / 审计 / 自演化的一体化人设插件（可测骨架版）",
+  "type": "module",
+  "main": "lib/plugin.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json --noEmit && esbuild src/plugin.ts --bundle --platform=node --format=esm --outfile=lib/plugin.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "soul",
+    "persona",
+    "plugin"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "esbuild": "^0.28.2",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.8"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/dsh-soul-kit": ">=0.3.0",
+    "@deepseek-ai/dsh-system-prompt": ">=0.1.0"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/dsh-system-prompt": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-soul-kit": {
+      "optional": true
+    }
+  },
+  "exports": {
+    ".": "./lib/plugin.js",
+    "./index": "./lib/index.js",
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml",
+      "entry": "src/plugin.ts"
+    },
+    "plugin": {
+      "name": "dsh-soul",
+      "inject": []
+    }
+  }
+}
