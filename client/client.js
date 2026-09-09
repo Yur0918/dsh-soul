@@ -29,7 +29,7 @@ __export(index_exports, {
 });
 module.exports = __toCommonJS(index_exports);
 var import_react = require("react");
-var import_dsh_client_ui_primitives = require("@deepseek-ai/dsh-client-ui-primitives");
+var h = require("react").createElement;
 var STYLE_OPTIONS = [
   { id: "default", label: "\u9ED8\u8BA4" },
   { id: "professional", label: "\u4E13\u4E1A\u4E25\u8C28" },
@@ -46,14 +46,27 @@ var LANG_OPTIONS = [
   { id: "en", label: "English" }
 ];
 var name = "dsh-soul";
-var inject = ["slots"];
+var inject = ["slots", "locale", "theme"];
 function apply(ctx) {
-  const { inject: slotsInject, register: slotsRegister } = ctx.slots;
-  slotsInject(
+  const c = ctx;
+  if (c === null || c === void 0) {
+    console.error("[dsh-soul] client apply invoked without a context (ctx=undefined); slots registration skipped");
+    return;
+  }
+  if (c.slots === void 0 || typeof c.slots.inject !== "function" || typeof c.slots.register !== "function") {
+    console.error("[dsh-soul] slots service missing on client ctx; settings section skipped");
+    return;
+  }
+  if (typeof h !== "function") {
+    console.error("[dsh-soul] ui-primitives h missing; settings section skipped");
+    return;
+  }
+  console.log("[dsh-soul] client apply: registering settings.section (id=soulfusion)");
+  c.slots.inject(
     "settings.section",
-    () => slotsRegister(
-      { name: "settings.section", id: "soul", order: 60, label: () => "\u4E2A\u6027\u5316" },
-      () => (0, import_dsh_client_ui_primitives.h)(SoulSection)
+    () => c.slots.register(
+      { name: "settings.section", id: "soulfusion", order: 60, label: () => "\u4E2A\u6027\u5316", locale: "soul" },
+      () => h(SoulSection)
     )
   );
 }
@@ -121,41 +134,41 @@ function SoulSection() {
     });
   };
   if (form === null) {
-    return (0, import_dsh_client_ui_primitives.h)("div", { style: { color: "#6b7280" } }, status !== "" ? status : "\u6B63\u5728\u8BFB\u53D6\u914D\u7F6E\u2026");
+    return h("div", { style: { color: "#6b7280" } }, status !== "" ? status : "\u6B63\u5728\u8BFB\u53D6\u914D\u7F6E\u2026");
   }
-  const field = (label, children) => (0, import_dsh_client_ui_primitives.h)(
+  const field = (label, children) => h(
     "label",
     { style: { display: "block", margin: "10px 0", fontSize: "13px", color: "#374151" } },
-    (0, import_dsh_client_ui_primitives.h)("div", { style: { marginBottom: "4px", fontWeight: 600 } }, label),
+    h("div", { style: { marginBottom: "4px", fontWeight: 600 } }, label),
     children
   );
   const inputStyle = { width: "100%", boxSizing: "border-box", padding: "6px 8px", borderRadius: "6px", border: "1px solid #d1d5db", fontSize: "13px" };
-  return (0, import_dsh_client_ui_primitives.h)(
+  return h(
     "div",
     { style: { maxWidth: "560px" } },
-    (0, import_dsh_client_ui_primitives.h)("div", { style: { marginBottom: "8px", fontSize: "14px", fontWeight: 600 } }, "SoulFusion \u2014 dsh-soul v2 \u4E2A\u6027\u5316"),
-    field("\u56DE\u590D\u98CE\u683C", (0, import_dsh_client_ui_primitives.h)(
+    h("div", { style: { marginBottom: "8px", fontSize: "14px", fontWeight: 600 } }, "SoulFusion \u2014 dsh-soul v2 \u4E2A\u6027\u5316"),
+    field("\u56DE\u590D\u98CE\u683C", h(
       "select",
       { value: form.style, onChange: (e) => set({ style: e.target.value }), style: inputStyle },
-      STYLE_OPTIONS.map((opt) => (0, import_dsh_client_ui_primitives.h)("option", { key: opt.id, value: opt.id }, `${opt.label}\uFF08${opt.id}\uFF09`))
+      STYLE_OPTIONS.map((opt) => h("option", { key: opt.id, value: opt.id }, `${opt.label}\uFF08${opt.id}\uFF09`))
     )),
-    field("\u56DE\u590D\u8BED\u8A00", (0, import_dsh_client_ui_primitives.h)(
+    field("\u56DE\u590D\u8BED\u8A00", h(
       "select",
       { value: form.language, onChange: (e) => set({ language: e.target.value }), style: inputStyle },
-      LANG_OPTIONS.map((opt) => (0, import_dsh_client_ui_primitives.h)("option", { key: opt.id, value: opt.id }, opt.label))
+      LANG_OPTIONS.map((opt) => h("option", { key: opt.id, value: opt.id }, opt.label))
     )),
-    field("\u6635\u79F0", (0, import_dsh_client_ui_primitives.h)("input", { value: form.nickname, maxLength: 50, onChange: (e) => set({ nickname: e.target.value }), style: inputStyle, placeholder: "\u6A21\u578B\u5BF9\u4F60\u7684\u79F0\u547C\uFF08\u53EF\u9009\uFF09" })),
-    field("\u804C\u4E1A", (0, import_dsh_client_ui_primitives.h)("input", { value: form.occupation, maxLength: 50, onChange: (e) => set({ occupation: e.target.value }), style: inputStyle, placeholder: "\u53EF\u9009" })),
-    field("\u4ECB\u7ECD", (0, import_dsh_client_ui_primitives.h)("textarea", { value: form.bio, maxLength: 500, onChange: (e) => set({ bio: e.target.value }), style: { ...inputStyle, minHeight: "60px", resize: "vertical" }, placeholder: "\u4E00\u53E5\u8BDD\u4ECB\u7ECD\u81EA\u5DF1\uFF08\u53EF\u9009\uFF09" })),
-    field("\u81EA\u5B9A\u4E49\u6307\u4EE4", (0, import_dsh_client_ui_primitives.h)("textarea", { value: form.customInstructions, maxLength: 2e3, onChange: (e) => set({ customInstructions: e.target.value }), style: { ...inputStyle, minHeight: "70px", resize: "vertical" }, placeholder: "\u4F8B\u5982\uFF1A\u56DE\u7B54\u5148\u7ED9\u7ED3\u8BBA\u518D\u5C55\u5F00\uFF1B\u7528\u4E2D\u6587\u56DE\u590D\u3002" })),
-    (0, import_dsh_client_ui_primitives.h)(
+    field("\u6635\u79F0", h("input", { value: form.nickname, maxLength: 50, onChange: (e) => set({ nickname: e.target.value }), style: inputStyle, placeholder: "\u6A21\u578B\u5BF9\u4F60\u7684\u79F0\u547C\uFF08\u53EF\u9009\uFF09" })),
+    field("\u804C\u4E1A", h("input", { value: form.occupation, maxLength: 50, onChange: (e) => set({ occupation: e.target.value }), style: inputStyle, placeholder: "\u53EF\u9009" })),
+    field("\u4ECB\u7ECD", h("textarea", { value: form.bio, maxLength: 500, onChange: (e) => set({ bio: e.target.value }), style: { ...inputStyle, minHeight: "60px", resize: "vertical" }, placeholder: "\u4E00\u53E5\u8BDD\u4ECB\u7ECD\u81EA\u5DF1\uFF08\u53EF\u9009\uFF09" })),
+    field("\u81EA\u5B9A\u4E49\u6307\u4EE4", h("textarea", { value: form.customInstructions, maxLength: 2e3, onChange: (e) => set({ customInstructions: e.target.value }), style: { ...inputStyle, minHeight: "70px", resize: "vertical" }, placeholder: "\u4F8B\u5982\uFF1A\u56DE\u7B54\u5148\u7ED9\u7ED3\u8BBA\u518D\u5C55\u5F00\uFF1B\u7528\u4E2D\u6587\u56DE\u590D\u3002" })),
+    h(
       "div",
       { style: { marginTop: "14px", display: "flex", gap: "8px", alignItems: "center" } },
-      (0, import_dsh_client_ui_primitives.h)("button", { type: "button", disabled: saving, onClick: save, style: { padding: "6px 16px", borderRadius: "6px", border: "1px solid #2563eb", background: "#2563eb", color: "#fff", cursor: saving ? "default" : "pointer" } }, saving ? "\u4FDD\u5B58\u4E2D\u2026" : "\u4FDD\u5B58\u8BBE\u7F6E"),
-      (0, import_dsh_client_ui_primitives.h)("button", { type: "button", disabled: saving, onClick: reset, style: { padding: "6px 16px", borderRadius: "6px", border: "1px solid #d1d5db", background: "#fff", cursor: saving ? "default" : "pointer" } }, "\u91CD\u7F6E\u4E3A\u9ED8\u8BA4"),
-      (0, import_dsh_client_ui_primitives.h)("span", { style: { fontSize: "12px", color: status.startsWith("\u4FDD\u5B58\u5931\u8D25") || status.startsWith("\u8BFB\u53D6\u5931\u8D25") || status.startsWith("\u91CD\u7F6E\u5931\u8D25") ? "#b91c1c" : status !== "" ? "#0f6f4f" : "#6b7280" } }, status)
+      h("button", { type: "button", disabled: saving, onClick: save, style: { padding: "6px 16px", borderRadius: "6px", border: "1px solid #2563eb", background: "#2563eb", color: "#fff", cursor: saving ? "default" : "pointer" } }, saving ? "\u4FDD\u5B58\u4E2D\u2026" : "\u4FDD\u5B58\u8BBE\u7F6E"),
+      h("button", { type: "button", disabled: saving, onClick: reset, style: { padding: "6px 16px", borderRadius: "6px", border: "1px solid #d1d5db", background: "#fff", cursor: saving ? "default" : "pointer" } }, "\u91CD\u7F6E\u4E3A\u9ED8\u8BA4"),
+      h("span", { style: { fontSize: "12px", color: status.startsWith("\u4FDD\u5B58\u5931\u8D25") || status.startsWith("\u8BFB\u53D6\u5931\u8D25") || status.startsWith("\u91CD\u7F6E\u5931\u8D25") ? "#b91c1c" : status !== "" ? "#0f6f4f" : "#6b7280" } }, status)
     ),
-    (0, import_dsh_client_ui_primitives.h)("div", { style: { marginTop: "10px", fontSize: "12px", color: "#9ca3af" } }, "\u98CE\u683C\u3001\u8BED\u8A00\u4E0E\u6307\u4EE4\u968F\u4E0B\u4E00\u6B21\u56DE\u590D\u751F\u6548\uFF1B\u4EBA\u8BBE\u5361/\u8BB0\u5FC6/\u5BA1\u8BA1\u9762\u677F\u5728 MV3 \u52A0\u5165\u3002")
+    h("div", { style: { marginTop: "10px", fontSize: "12px", color: "#9ca3af" } }, "\u98CE\u683C\u3001\u8BED\u8A00\u4E0E\u6307\u4EE4\u968F\u4E0B\u4E00\u6B21\u56DE\u590D\u751F\u6548\uFF1B\u4EBA\u8BBE\u5361/\u8BB0\u5FC6/\u5BA1\u8BA1\u9762\u677F\u5728 MV3 \u52A0\u5165\u3002")
   );
 }
 function humanizeSaveError(body) {

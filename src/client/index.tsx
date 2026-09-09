@@ -7,7 +7,12 @@
  * the loader module table at runtime): react/react-dom + ui-primitives `h`.
  */
 import { useEffect, useState } from 'react'
-import { h } from '@deepseek-ai/dsh-client-ui-primitives'
+// dshmarket parity verified against its source: `h` is NOT a primitives
+// export (primitives ships Menu/Button/Tooltip… components only); the
+// element factory comes from react. The host loader's require returns the
+// module directly — never wrap it in an esbuild import (its __toESM copies
+// own properties only and drops getter-backed members).
+const h = (require('react') as { createElement: (type: unknown, props?: unknown, ...children: unknown[]) => unknown }).createElement
 
 const STYLE_OPTIONS: Array<{ id: string; label: string }> = [
   { id: 'default', label: '默认' },
@@ -41,14 +46,30 @@ interface SoulClientCtx {
 }
 
 export const name = 'dsh-soul'
-export const inject = ['slots']
-export function apply(ctx: SoulClientCtx): void {
-  const { inject: slotsInject, register: slotsRegister } = (ctx as unknown as {
-    slots: { inject(slot: string, register: () => unknown): void; register(meta: Record<string, unknown>, component: () => unknown): unknown }
-  }).slots
-
-  slotsInject('settings.section', () =>
-    slotsRegister({ name: 'settings.section', id: 'soul', order: 60, label: () => '个性化' }, () =>
+// Parity with dshmarket's client assembly: the client scaffold resolver
+// composes the apply context from this list; missing names at boot are
+// tolerated per-service here (guard below), but the declared set must match
+// what the settings host provides.
+export const inject = ['slots', 'locale', 'theme']
+export function apply(ctx: unknown): void {
+  const c = ctx as {
+    slots?: { inject(slot: string, register: () => unknown): void; register(meta: Record<string, unknown>, component: () => unknown): unknown }
+  }
+  if (c === null || c === undefined) {
+    console.error('[dsh-soul] client apply invoked without a context (ctx=undefined); slots registration skipped')
+    return
+  }
+  if (c.slots === undefined || typeof c.slots.inject !== 'function' || typeof c.slots.register !== 'function') {
+    console.error('[dsh-soul] slots service missing on client ctx; settings section skipped')
+    return
+  }
+  if (typeof h !== 'function') {
+    console.error('[dsh-soul] ui-primitives h missing; settings section skipped')
+    return
+  }
+  console.log('[dsh-soul] client apply: registering settings.section (id=soulfusion)')
+  c.slots.inject('settings.section', () =>
+    c.slots!.register({ name: 'settings.section', id: 'soulfusion', order: 60, label: () => '个性化', locale: 'soul' }, () =>
       h(SoulSection),
     ),
   )
