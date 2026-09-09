@@ -37,7 +37,7 @@ Tests       62 passed (62)
 
 ```bash
 # 首次安装
-dsh plugin --profile web add dsh-soul
+dsh plugin --profile web add @yur/dsh-soul
 
 # 升级（v1 → v2 自动迁移，旧配置备份后无损升级）
 dsh plugin --profile web update dsh-soul
