@@ -1,4 +1,4 @@
-window.__ModuleLoader__.load({ id: "dsh-soul", factory: (require, module, exports) => {
+window.__ModuleLoader__.load({ id: "@yur0918/dsh-soul", factory: (require, module, exports) => {
 "use strict";
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
