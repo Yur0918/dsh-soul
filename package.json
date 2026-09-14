@@ -24,14 +24,10 @@
     "vitest": "^2.1.8"
   },
   "peerDependencies": {
-    "@deepseek-ai/dsh-soul-kit": ">=0.3.0",
     "@deepseek-ai/dsh-system-prompt": ">=0.1.0"
   },
   "peerDependenciesMeta": {
     "@deepseek-ai/dsh-system-prompt": {
-      "optional": true
-    },
-    "@deepseek-ai/dsh-soul-kit": {
       "optional": true
     }
   },
