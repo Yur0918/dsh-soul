@@ -17,6 +17,9 @@
     "plugin"
   ],
   "license": "MIT",
+  "engines": {
+    "node": ">=22.19.0"
+  },
   "devDependencies": {
     "@types/node": "^22.10.2",
     "esbuild": "^0.28.2",
