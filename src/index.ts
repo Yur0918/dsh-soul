@@ -49,6 +49,13 @@ export {
   isImported,
 } from './config/migrate';
 export type { V1MigrationResult, MdMigrationResult } from './config/migrate';
+export {
+  legacyConfigPath,
+  readLegacyV1Raw,
+  detectConflictingSoulPlugins,
+  SELF_PACKAGE_NAME,
+} from './config/legacy';
+export type { LegacyV1Read } from './config/legacy';
 export { STYLES, getStyle } from './prompt/styles';
 export type { StylePreset } from './prompt/styles';
 export { compilePrompt, GLOBAL_NOTE, resolveActiveCard } from './prompt/compilePrompt';

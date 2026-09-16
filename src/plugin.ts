@@ -3,7 +3,9 @@
  *
  * Host-side wiring:
  *  - config persistence: $DSH_HOME/soul/soul-config.json (atomic write, v1
- *    backup, idempotent import markers)
+ *    backup, idempotent import markers); when the new path is missing, the v1
+ *    config at $DSH_HOME/soul-config.json (legacy home-root path) is discovered
+ *    read-only and migrated in memory — the old file is never written/deleted
  *  - prompt sections: soul:persona (0.1) + soul:memory (0.5) registered as
  *    lazy getters so config changes apply on the next assembly — no agent
  *    restart, no inject needed
@@ -20,6 +22,7 @@ import { dirname, join } from 'node:path';
 import { createDefaultConfig, isV2Config, SCHEMA_VERSION, LIMITS } from './config/schema';
 import { validateConfig } from './config/validate';
 import { migrateV1ToV2, importFromMd, isImported } from './config/migrate';
+import { readLegacyV1Raw, noticeLegacyConfig, detectConflictingSoulPlugins } from './config/legacy';
 import { compilePrompt, GLOBAL_NOTE } from './prompt/compilePrompt';
 import { SECTION_ORDER } from './prompt/sections';
 import { StyleId, SoulConfigV2, STYLE_IDS, LANGUAGE_IDS } from './config/schema';
@@ -59,8 +62,8 @@ function configPath(ctx: SoulCtx): string {
 
 function loadConfig(ctx: SoulCtx): SoulConfigV2 {
   const path = configPath(ctx);
-  try {
-    if (existsSync(path)) {
+  if (existsSync(path)) {
+    try {
       const raw = JSON.parse(readFileSync(path, 'utf8')) as unknown;
       if (isV2Config(raw)) {
         const v = validateConfig(raw as SoulConfigV2);
@@ -69,9 +72,27 @@ function loadConfig(ctx: SoulCtx): SoulConfigV2 {
       // v1 file: one-shot migration on read (keeps the file untouched).
       const v1 = migrateV1ToV2(raw as Record<string, unknown>);
       return v1.config;
+    } catch (error) {
+      ctx.logger?.warn?.(`[dsh-soul] config load failed: ${String(error)}; using defaults`);
+      // Corrupt/unreadable new file keeps prior semantics (defaults): do not
+      // silently resurrect the legacy file over it.
+      return { ...createDefaultConfig() };
     }
-  } catch (error) {
-    ctx.logger?.warn?.(`[dsh-soul] config load failed: ${String(error)}; using defaults`);
+  }
+  // New path missing: discover the v1 legacy config at $DSH_HOME/soul-config.json
+  // (home root, one level above soulDir). Read-only — the legacy file is never
+  // written/deleted; the first saveConfig persists to the new path.
+  const legacy = readLegacyV1Raw(soulDir(ctx));
+  if (legacy !== null) {
+    // A v2-shaped file at the legacy path (e.g. manually moved) must not run
+    // through the v1 migration — that would silently drop v2-only fields.
+    if (isV2Config(legacy.raw)) {
+      const v2 = validateConfig(legacy.raw as SoulConfigV2);
+      if (v2.ok) return v2.value;
+    }
+    const v1 = migrateV1ToV2(legacy.raw as Record<string, unknown>);
+    noticeLegacyConfig(ctx.logger, legacy.path, path);
+    return v1.config;
   }
   return { ...createDefaultConfig() };
 }
@@ -114,6 +135,14 @@ export function apply(ctx: SoulCtx): { dispose(): void } {
 
   const state: SoulState = { config: loadConfig(ctx), refresh: () => {} };
   const runningTools: Array<() => void> = [];
+
+  // ---- dual-install conflict scan (one-shot, read-only) -------------------
+  try {
+    const conflicts = detectConflictingSoulPlugins(dirname(soulDir(ctx)));
+    if (conflicts.length > 0) {
+      log('warn', `conflicting soul plugin(s) in profiles: ${conflicts.join(', ')} — they inject their own soul prompt sections/commands, causing duplicate prompt injection; remove or disable them`);
+    }
+  } catch { /* best-effort scan */ }
 
   // Lazy prompt section text: read the CURRENT config at assembly time, so a
   // config save is effective on the very next model step with no inject.
