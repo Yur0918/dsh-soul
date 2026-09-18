@@ -65,6 +65,8 @@ export { MemoryService, slugify, truncateHead } from './memory/service';
 export type { MemoryWriteResult } from './memory/service';
 export { AuditLog, AUDIT_STATUSES } from './memory/audit';
 export type { AuditEntry, AuditStatus, AuditEntryInput } from './memory/audit';
+export { filterAudit, summarizeAudit, detectDeviations, auditReport, DEVIATION_DEFAULTS } from './memory/auditReport';
+export type { AuditQuery, AuditSummary, DeviationRule, Deviation } from './memory/auditReport';
 export { PendingRegistry, SLOT_TOOLS } from './memory/confirm';
 export type { SlotTool, PendingEnqueueInput } from './memory/confirm';
 export { buildSectionRegistrations } from './bridge/systemPrompt';

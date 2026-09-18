@@ -26,6 +26,8 @@ import { readLegacyV1Raw, noticeLegacyConfig, detectConflictingSoulPlugins } fro
 import { compilePrompt, GLOBAL_NOTE } from './prompt/compilePrompt';
 import { SECTION_ORDER } from './prompt/sections';
 import { StyleId, SoulConfigV2, STYLE_IDS, LANGUAGE_IDS } from './config/schema';
+import { AuditLog } from './memory/audit';
+import { auditReport, type AuditQuery, type DeviationRule } from './memory/auditReport';
 
 const PLUGIN_ID = 'soul';
 
@@ -232,6 +234,63 @@ export function apply(ctx: SoulCtx): { dispose(): void } {
     });
   } catch (error) {
     log('error', `webServer registration failed: ${String(error)}`);
+  }
+
+  // ---- HTTP API: GET /dsh-soul/audit ---------------------------------------
+  // Read-only audit queries + deviation report (recommendation #1 from the
+  // 09-16 evaluation: echocat proved the audit-panel demand). Zero writes.
+  try {
+    const injectFn = (ctx as unknown as { inject?: (services: string[], cb: (hostCtx: Record<string, unknown>) => void) => void }).inject;
+    if (typeof injectFn === 'function') injectFn(['webServer'], (hostCtx: Record<string, unknown>) => {
+    const webServer = hostCtx.webServer as { register(opts: { kind: string; path: string; handler: (req: unknown, res: unknown) => void }): unknown } | undefined;
+    if (webServer !== undefined && typeof webServer.register === 'function') {
+      const auditLog = new AuditLog(join(soulDir(ctx), 'audit', 'soul-audit.jsonl'));
+      webServer.register({
+        kind: 'exact',
+        path: '/dsh-soul/audit',
+        handler: (req: unknown, res: unknown) => {
+          const r = res as { writeHead?: (code: number, headers?: Record<string, string>) => void; end?: (body: string) => void };
+          const write = (code: number, body: string): void => {
+            r.writeHead?.(code, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
+            r.end?.(body);
+          };
+          const method = String((req as { method?: string })?.method ?? 'GET').toUpperCase();
+          if (method !== 'GET') {
+            write(405, JSON.stringify({ ok: false, errors: ['method not allowed'] }));
+            return;
+          }
+          const url = new URL(String((req as { url?: string })?.url ?? '/'), 'http://x');
+          const p = url.searchParams;
+          const q: AuditQuery = {};
+          const status = p.get('status') ?? undefined;
+          if (status !== undefined && status !== '') q.status = status as AuditQuery['status'];
+          for (const k of ['tool', 'sessionId', 'sinceTs', 'untilTs'] as const) {
+            const v = p.get(k) ?? undefined;
+            if (v !== undefined && v !== '') q[k] = v;
+          }
+          const limitRaw = p.get('limit');
+          if (limitRaw !== null && limitRaw !== '' && Number.isFinite(Number(limitRaw))) q.limit = Math.max(0, Number(limitRaw));
+          const rules: DeviationRule = {};
+          const mt = p.get('maxToolCallsPerSession');
+          if (mt !== null && mt !== '' && Number.isFinite(Number(mt))) rules.maxToolCallsPerSession = Number(mt);
+          void (async () => {
+            try {
+              const entries = await auditLog.readAll();
+              const report = auditReport(entries, q, rules);
+              write(200, JSON.stringify({ ok: true, ...report }));
+            } catch (error) {
+              write(500, JSON.stringify({ ok: false, errors: [`audit read failed: ${String(error)}`] }));
+            }
+          })();
+        },
+      });
+      log('info', `HTTP API mounted: /dsh-soul/audit`);
+    } else {
+      log('warn', 'webServer not available — audit API disabled');
+    }
+    });
+  } catch (error) {
+    log('error', `audit webServer registration failed: ${String(error)}`);
   }
 
   // ---- /soul command family ------------------------------------------------
