@@ -10,17 +10,17 @@ dsh-soul × dsh-soul-md 融合增强插件：**人设卡 + 记忆 + 审计 + 自
 
 | 项目 | 状态 |
 |---|---|
-| 核心逻辑单元测试 | ✅ **62 / 62 通过**（6 个测试文件：styles / compilePrompt / validate / migrate / confirm / audit） |
-| 构建检查 | ✅ `npm run build`（tsc -p tsconfig.json）零错误 |
+| 核心逻辑单元测试 | ✅ **74 / 74 通过**（7 个测试文件：styles / compilePrompt / validate / migrate / confirm / audit / legacy） |
+| 构建检查 | ✅ `npm run build`（tsc -p tsconfig.json）零错误；`tsc --noEmit` 零错误 |
 | 依赖安装 | ✅ `npm install` 成功（vitest 2.x / typescript 5.x；peerDeps 均为 optional 声明，无需真实安装） |
+| 运行时接入 | ✅ prompt 段 / `/soul` 命令 / `/dsh-soul/config` HTTP API / 设置分区，本机 dsh web 0.1.5+ 验证加载 |
 
 ```
-Test Files  6 passed (6)
-Tests       62 passed (62)
+Test Files  7 passed (7)
+Tests       74 passed (74)
 ```
 
-> 本仓库为**可测试骨架**：核心逻辑（配置/迁移/编译/记忆/审计/确认）全部纯函数实现并有单测覆盖；
-> DSH 运行时接入（systemPrompt 注册 / agent.inject）与 UI 组件仅以「适配层接口 + 骨架注释」存在（见 `src/bridge/`、`src/ui/`），不产生真实 DSH 调用、不污染本机环境。
+> 本仓库为**可测试骨架 + 真实运行时接入**的混合体：核心逻辑（配置/迁移/编译/记忆/审计/确认）全部纯函数实现并有单测覆盖；DSH 运行时接入已真实落地——`plugin.ts` 注册 `soul:persona` / `soul:memory` prompt 段、`/soul` 命令（show/set/reset/enable/disable）、`/dsh-soul/config` HTTP API 与设置页「个性化」分区，并在本机 dsh web 加载验证。6 Tab 面板、记忆/审计/确认槽的 runtime 接线、md 导入仍属 MV2/MV3 范围（见「/soul 命令表」规划区）。
 
 ## 功能清单
 
@@ -50,20 +50,25 @@ dsh plugin --profile web update dsh-soul
 
 ## /soul 命令表
 
-| 命令 | 说明 |
+当前已实现并在本机验证加载的命令面（其余为 v1 语义参考、MV2/MV3 规划范围，见「开发状态」）：
+
+| 命令 | 状态 |
 |---|---|
-| `/soul` | 查看当前生效配置摘要（含来源链：设置 / 会话卡 / workspace 卡 / 默认卡 / 无） |
-| `/soul show` | 完整查看当前生效人设与各段字符数（persona / memory） |
-| `/soul on` / `/soul off` | 启用/停用个性化（`enabled`；停用时注入与记忆/行为全部停用，配置保留） |
-| `/soul set <field> <value>` | 设置字段：nickname / occupation / bio / style / traits.headings / traits.emoji / language / customInstructions |
-| `/soul set style=humorous` | 设置风格（9 值；v1 旧值 `efficient`/`casual` 提示迁移） |
-| `/soul card list / add / show / activate` | 人设卡管理（CRUD、设置默认卡） |
-| `/soul memory show / reset` | 记忆查看 / 重置（global 或当前卡域） |
-| `/soul confirm [id]` | 确认 pending 提案（set_persona / soul_update / memory_rewrite） |
-| `/soul reject [id]` | 拒绝 pending 提案 |
-| `/soul audit [filter]` | 审计记录查看（按 tool / status / 时间过滤） |
-| `/soul save <name>` / `/soul use <name>` / `/soul list` / `/soul del <name>` | 人设预设库（v1 快照语义：结构化字段快照，卡片/行为不入快照） |
-| `/soul import md` | 一次性导入 dsh-soul-md 配置与卡片（幂等） |
+| `/soul` / `/soul show` | ✅ 已实现 —— 查看当前生效配置摘要（昵称/风格/语言/人设卡数/记忆注入等） |
+| `/soul set <field> <value>` | ✅ 已实现 —— style / language / nickname / occupation / bio / customInstructions（traits 字段走设置页 API） |
+| `/soul reset` | ✅ 已实现 —— 恢复默认配置 |
+| `/soul enable` / `/soul disable` | ✅ 已实现 —— 启用/停用个性化（配置保留） |
+
+> 下表为 v1 语义参考与 MV2/MV3 规划，**尚未在本仓实现**，勿当作当前功能使用：
+
+| 命令 | 规划 |
+|---|---|
+| `/soul card list / add / show / activate` | 人设卡管理（卡片存储已就绪，命令面在 MV2） |
+| `/soul memory show / reset` | 记忆查看 / 重置（MV2） |
+| `/soul confirm [id]` / `/soul reject [id]` | 提案确认/拒绝（确认槽运行时接线在 MV2） |
+| `/soul audit [filter]` | 审计记录查看（jsonl 已落盘，查询命令在 MV2） |
+| `/soul save <name>` / `/soul use <name>` / `/soul list` / `/soul del <name>` | 人设预设库（MV3） |
+| `/soul import md` | dsh-soul-md 导入（MV3；v1 旧配置自动发现已在 2.0.1 落地） |
 
 ## 9 种回复风格
 
@@ -94,7 +99,7 @@ src/
 ├── config/    schema.ts（字段/常量/默认值）· validate.ts（白名单+类型+长度+枚举）· migrate.ts（v1/md 迁移）
 ├── prompt/    styles.ts（9 风格文案）· compilePrompt.ts（流水线）· sections.ts（order 常量）
 ├── memory/    service.ts（记忆读写/截断）· audit.ts（append-only 审计）· confirm.ts（按 tool 分槽）
-├── bridge/    systemPrompt.ts / inject.ts（适配层接口声明，无真实调用）
+├── bridge/    systemPrompt.ts / inject.ts（运行时接线适配层；systemPrompt 已真实注册）
 ├── ui/        index.tsx（Tab 结构组件清单注释骨架）
 └── index.ts   纯函数 API 汇聚
 tests/         styles / compilePrompt / validate / migrate / confirm / audit（vitest 单测）
