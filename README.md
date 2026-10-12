@@ -35,6 +35,19 @@ Tests       74 passed (74)
 - **审计**：`soul-audit.jsonl` append-only；条目 `{ts, sessionId, actor, tool, target, oldHash, newText, status, source}`；status：`pending | applied | rejected | superseded | expired`
 - **确认槽**：按 tool 分槽（`set_persona` / `soul_update` / `memory_rewrite` 各一槽）；confirm / reject / 替换（superseded）/ 过期
 
+## HTTP API（同源，web profile）
+
+| 端点 | 方法 | 说明 |
+|---|---|---|
+| `/dsh-soul/config` | GET / POST | 读取 / 保存配置（设置页在用；POST 走 validateConfig 整单校验） |
+| `/dsh-soul/prompt` | GET | 当前编译产物：`persona` / `memory` 全文 + 段名与 order + 字符数（所见即注入） |
+| `/dsh-soul/personas` | GET | 人设快照列表（count / max=20 / 全量快照） |
+| `/dsh-soul/personas?name=<key>` | POST / PUT | 新增或覆盖一张人设快照（body 为 JSON 快照，至少含 `style`） |
+| `/dsh-soul/personas?name=<key>` | DELETE | 删除人设快照 |
+| `/dsh-soul/audit` | GET | 审计查询 + 越轨报告（`status/tool/sessionId/sinceTs/untilTs/limit` 过滤 + `maxToolCallsPerSession` 阈值） |
+
+> v1 迁移说明：v1 用户配置文件（`$DSH_HOME/soul-config.json`）在 v2 新路径缺失时会被**只读自动发现并内存迁移**，首次保存才写入新路径（旧文件永不改写）。v1 的 `/api/soul/personas` 对位端点即上表 `/dsh-soul/personas`。
+
 ## 安装
 
 ```bash

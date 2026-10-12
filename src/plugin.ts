@@ -27,6 +27,7 @@ import { compilePrompt, GLOBAL_NOTE } from './prompt/compilePrompt';
 import { SECTION_ORDER } from './prompt/sections';
 import { StyleId, SoulConfigV2, STYLE_IDS, LANGUAGE_IDS } from './config/schema';
 import { AuditLog } from './memory/audit';
+import { upsertPersona, deletePersona, personasPayload, PersonaError } from './config/personas';
 import { auditReport, type AuditQuery, type DeviationRule } from './memory/auditReport';
 
 const PLUGIN_ID = 'soul';
@@ -285,6 +286,135 @@ export function apply(ctx: SoulCtx): { dispose(): void } {
         },
       });
       log('info', `HTTP API mounted: /dsh-soul/audit`);
+
+  // ---- HTTP API: GET /dsh-soul/prompt ---------------------------------------
+  // Read-only: the compiled persona section exactly as it will be injected
+  // (v1 parity item #4 of the 09-16 evaluation). Zero writes.
+  try {
+    const injectFn = (ctx as unknown as { inject?: (services: string[], cb: (hostCtx: Record<string, unknown>) => void) => void }).inject;
+    if (typeof injectFn === 'function') injectFn(['webServer'], (hostCtx: Record<string, unknown>) => {
+    const webServer = hostCtx.webServer as { register(opts: { kind: string; path: string; handler: (req: unknown, res: unknown) => void }): unknown } | undefined;
+    if (webServer !== undefined && typeof webServer.register === 'function') {
+      webServer.register({
+        kind: 'exact',
+        path: '/dsh-soul/prompt',
+        handler: (req: unknown, res: unknown) => {
+          const r = res as { writeHead?: (code: number, headers?: Record<string, string>) => void; end?: (body: string) => void };
+          const write = (code: number, body: string): void => {
+            r.writeHead?.(code, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
+            r.end?.(body);
+          };
+          const method = String((req as { method?: string })?.method ?? 'GET').toUpperCase();
+          if (method !== 'GET') {
+            write(405, JSON.stringify({ ok: false, errors: ['method not allowed'] }));
+            return;
+          }
+          const compiled = compilePrompt({ config: state.config });
+          write(200, JSON.stringify({
+            ok: true,
+            persona: compiled.persona,
+            memory: compiled.memory,
+            sections: { persona: { name: 'soul:persona', order: SECTION_ORDER.persona }, memory: { name: 'soul:memory', order: SECTION_ORDER.memory } },
+            personaChars: compiled.persona.length,
+            memoryChars: compiled.memory.length,
+          }));
+        },
+      });
+      log('info', `HTTP API mounted: /dsh-soul/prompt`);
+    } else {
+      log('warn', 'webServer not available — prompt API disabled');
+    }
+    });
+  } catch (error) {
+    log('error', `webServer registration failed: ${String(error)}`);
+  }
+
+  // ---- HTTP API: /dsh-soul/personas -----------------------------------------
+  // v1-parity persona snapshots: list / upsert / delete. Writes go through
+  // the same validateConfig gate as the settings page.
+  try {
+    const injectFn = (ctx as unknown as { inject?: (services: string[], cb: (hostCtx: Record<string, unknown>) => void) => void }).inject;
+    if (typeof injectFn === 'function') injectFn(['webServer'], (hostCtx: Record<string, unknown>) => {
+    const webServer = hostCtx.webServer as { register(opts: { kind: string; path: string; handler: (req: unknown, res: unknown) => void }): unknown } | undefined;
+    if (webServer !== undefined && typeof webServer.register === 'function') {
+      const readBody = (req: unknown): Promise<string> => new Promise((resolve, reject) => {
+        let body = '';
+        const onData = (chunk: Buffer | string): void => { body += String(chunk); };
+        const onEnd = (): void => resolve(body);
+        const onError = (e: unknown): void => reject(e instanceof Error ? e : new Error(String(e)));
+        const r = req as AsyncIterable<Buffer | string> & { on?: (ev: string, cb: (...a: unknown[]) => void) => void; removeListener?: (ev: string, cb: (...a: unknown[]) => void) => void };
+        if (r && typeof (r as AsyncIterable<Buffer | string>)[Symbol.asyncIterator] === 'function') {
+          void (async () => {
+            try { for await (const chunk of r as AsyncIterable<Buffer | string>) onData(chunk); onEnd(); } catch (e) { onError(e); }
+          })();
+        } else if (typeof r?.on === 'function') {
+          r.on!('data', (c: unknown) => onData(String(c)));
+          r.on!('end', () => onEnd());
+          r.on!('error', (e: unknown) => onError(e));
+        } else { onEnd(); }
+      });
+      webServer.register({
+        kind: 'exact',
+        path: '/dsh-soul/personas',
+        handler: (req: unknown, res: unknown) => {
+          const r = res as { writeHead?: (code: number, headers?: Record<string, string>) => void; end?: (body: string) => void };
+          const write = (code: number, body: string): void => {
+            r.writeHead?.(code, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
+            r.end?.(body);
+          };
+          const method = String((req as { method?: string })?.method ?? 'GET').toUpperCase();
+          if (method === 'GET') {
+            write(200, JSON.stringify(personasPayload(state.config)));
+            return;
+          }
+          const url = new URL(String((req as { url?: string })?.url ?? '/'), 'http://x');
+          const key = (url.searchParams.get('name') ?? '').trim();
+          if (key === '') {
+            write(400, JSON.stringify({ ok: false, errors: ['persona key required: pass ?name=<key>'] }));
+            return;
+          }
+          if (method === 'DELETE') {
+            const result = deletePersona(state.config, key);
+            if (!result.deleted) {
+              write(404, JSON.stringify({ ok: false, errors: [`persona not found: ${key}`] }));
+              return;
+            }
+            const saved = saveConfig(ctx, result.config, true);
+            if (!saved.ok) { write(400, JSON.stringify({ ok: false, errors: saved.errors ?? [] })); return; }
+            state.config = result.config;
+            log('info', `persona deleted via HTTP (${key})`);
+            write(200, JSON.stringify({ deleted: key, ...personasPayload(state.config) }));
+            return;
+          }
+          if (method === 'POST' || method === 'PUT') {
+            void (async () => {
+              try {
+                const body = await readBody(req);
+                const snapshot = body.trim() === '' ? {} : (JSON.parse(body) as unknown);
+                const next = upsertPersona(state.config, key, snapshot);
+                const saved = saveConfig(ctx, next, true);
+                if (!saved.ok) { write(400, JSON.stringify({ ok: false, errors: saved.errors ?? [] })); return; }
+                state.config = next;
+                log('info', `persona saved via HTTP (${key})`);
+                write(200, JSON.stringify({ saved: key, ...personasPayload(state.config) }));
+              } catch (error) {
+                if (error instanceof PersonaError) { write(error.status, JSON.stringify({ ok: false, errors: [error.message] })); return; }
+                write(400, JSON.stringify({ ok: false, errors: [`parse failed: ${String(error)}`] }));
+              }
+            })();
+            return;
+          }
+          write(405, JSON.stringify({ ok: false, errors: ['method not allowed'] }));
+        },
+      });
+      log('info', `HTTP API mounted: /dsh-soul/personas`);
+    } else {
+      log('warn', 'webServer not available — personas API disabled');
+    }
+    });
+  } catch (error) {
+    log('error', `webServer registration failed: ${String(error)}`);
+  }
     } else {
       log('warn', 'webServer not available — audit API disabled');
     }
