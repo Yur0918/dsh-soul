@@ -4,6 +4,16 @@ dsh-soul × dsh-soul-md 融合增强插件：**人设卡 + 记忆 + 审计 + 自
 
 包名沿用 `dsh-soul`，版本 **2.0.0**（major 升级，升级即迁移、旧配置无损）。
 
+English: [README.en.md](README.en.md)
+
+## 界面
+
+设置页「个性化」→「关于你与风格」Tab（9 种风格 + 生效提示词只读预览）与「记忆与演化」Tab（记忆文件状态 + append-only 审计 + 按 tool 分槽的确认槽）：
+
+![dsh-soul 设置页：关于你与风格的 9 种回复风格选择与「当前生效提示词」预览；记忆与演化页的记忆文件状态、append-only 审计条目与按 tool 分槽的确认槽](./docs/ui-soul.png)
+
+*(界面示意稿——仅表布局与信息层级；图中数值与文案均为示意数据，非真实配置。)*
+
 ## 开发状态
 
 **已验证（2026-09-09，dsh web 0.1.1-rc.2）**：设置页「个性化」分区保存 `style=roast` 经 `/dsh-soul/config` 生效（日志 `config saved via HTTP (style=roast)`）；prompt 段 `soul:persona`/`soul:memory` 惰性注册、下一次回复生效。
@@ -103,7 +113,7 @@ dsh plugin --profile web update dsh-soul
 
 - dsh-soul v2 **已内置 dsh-soul-md 全部能力**（人设卡、会话/workspace 切换、记忆注入），不依赖其包；
 - 请**卸载 dsh-soul-md，二选一安装**：两个插件同装会同时注册 `soul:persona` 段，可能叠加/冲突；
-- md 用户请先执行 `/soul import md` 一次性导入（含 ≤v0.4 legacy path 兜底），记忆文件迁移后原目录保留，可在 UI「迁移与兼容」Tab 二次确认清理。
+- md 用户注意：**`/soul import md` 属 MV3 规划，尚未在本仓实现**（见「/soul 命令表」的规划区）。当前版本不会自动读取 dsh-soul-md 的卡片与记忆，需要手工迁移；字段映射逻辑见 `src/config/migrate.ts` 的 `importFromMd`（其 `/soul import md` 运行时入口同样待 MV3 接入）。
 
 ## 目录结构
 

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<title>dsh-soul 界面设计稿</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#eef1f5;font:14px/1.65 -apple-system,"PingFang SC",sans-serif;
+  padding:34px;color:#1a2332}
+.wrap{width:1160px;margin:0 auto;display:grid;grid-template-columns:1.15fr .85fr;
+  gap:16px}
+
+.sum2{grid-column:1/-1;background:#fff;border:1px solid #dfe4ea;border-radius:9px;
+  padding:13px 18px;display:flex;align-items:center;gap:8px;margin-bottom:2px}
+.sum2 b{font-size:22px;color:#1a4fa0;letter-spacing:-.02em}
+.sum2 b.z{color:#1a7f5a}.sum2 b.s{font-size:15px;color:#5b6675}
+.sum2 span{font-size:12px;color:#7a8595}
+.sum2 i{width:1px;height:15px;background:#e3e7ec;margin:0 7px}
+.sum2 em{margin-left:auto;font-style:normal;font-size:12px;color:#5b6675}
+
+.pane{background:#fff;border:1px solid #dfe4ea;border-radius:10px;overflow:hidden;
+  box-shadow:0 4px 16px rgba(20,35,55,.07);align-self:start}
+.ph{padding:13px 17px;border-bottom:1px solid #e6eaef;background:#fafbfc;
+  display:flex;align-items:center;gap:9px}
+.ph h3{font-size:13.5px;font-weight:650;color:#1a2332}
+.ph .n{font-size:10.5px;color:#8a94a3;margin-left:auto;background:#eef2f7;
+  padding:2px 8px;border-radius:999px}
+
+/* 设置页：左侧 Tab 轨 + 右侧表单 */
+.set{display:grid;grid-template-columns:132px 1fr}
+.rail{border-right:1px solid #eef1f4;background:#fbfcfd;padding:9px 0}
+.rail a{display:block;font-size:11.5px;color:#6b7686;padding:7px 13px;
+  border-left:2px solid transparent}
+.rail a.on{color:#1a4fa0;background:#f2f6fc;border-left-color:#2f6fc4;font-weight:600}
+.form{padding:13px 16px}
+.fld{margin-bottom:11px}
+.fld label{display:block;font-size:11px;color:#8a94a3;margin-bottom:4px}
+.inp{border:1px solid #dfe4ea;border-radius:7px;padding:6px 10px;font-size:12px;
+  color:#1f2a37;background:#fff}
+.inp.ph2{color:#a8b1bd}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sel{display:flex;align-items:center;justify-content:space-between;
+  border:1px solid #dfe4ea;border-radius:7px;padding:6px 10px;font-size:12px}
+.sel .cv{color:#1f2a37}.sel .ar{color:#9aa3b0;font-size:10px}
+.segs{display:flex;gap:5px}
+.seg{font-size:10.5px;color:#6b7686;background:#f4f6f9;border:1px solid #e4e8ed;
+  border-radius:6px;padding:3px 9px}
+.seg.on{color:#1a4fa0;background:#eaf1fb;border-color:#c9dcf5;font-weight:600}
+.hint{font-size:10.5px;color:#9aa3b0;margin-top:3px}
+
+/* 生效提示词只读面板 */
+.prev{margin-top:6px;border:1px solid #e6eaef;border-radius:8px;background:#fbfcfd;overflow:hidden}
+.prev .hd{font-size:10.5px;color:#7a8595;padding:6px 11px;border-bottom:1px solid #eef1f4;
+  display:flex;align-items:center;gap:7px;background:#f7f9fb}
+.prev .hd .o{margin-left:auto;color:#9aa3b0}
+.prev pre{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;
+  line-height:1.75;color:#5b6675;padding:9px 12px;white-space:pre-wrap}
+.prev .k{color:#1a4fa0}.prev .g{color:#1a7f5a}.prev .d{color:#9aa3b0}
+
+/* 记忆与演化 / 审计 */
+.blk{padding:12px 16px;border-bottom:1px solid #f0f3f6}
+.blk:last-child{border-bottom:0}
+.blk h4{font-size:11px;color:#9aa3b0;text-transform:uppercase;letter-spacing:.05em;
+  margin-bottom:9px;font-weight:600}
+.mrow{display:flex;align-items:center;gap:9px;font-size:11.5px;margin-bottom:7px}
+.mrow .fn{font-family:ui-monospace,Menlo,monospace;font-size:11px;color:#2b3a4d;width:118px}
+.mrow .bar{flex:1;height:9px;background:#f1f4f7;border-radius:4px;overflow:hidden}
+.mrow .bar i{display:block;height:100%;background:#2f6fc4;border-radius:4px}
+.mrow .bar i.warn{background:#d9a441}.mrow .v{font-size:10.5px;color:#8a94a3;width:96px;text-align:right}
+.mrow .v.warn{color:#8a5a00}
+
+/* 审计条目 */
+.aul{font-family:ui-monospace,Menlo,monospace;font-size:10.5px}
+.arow{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px dashed #f0f3f6}
+.arow .ts{color:#9aa3b0;width:74px;flex-shrink:0}
+.arow .tl{color:#2b3a4d;width:84px;flex-shrink:0}
+.arow .tg{color:#6b7686;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bdg{font-size:9.5px;padding:1.5px 7px;border-radius:999px;font-weight:600;flex-shrink:0}
+.bdg.p{color:#8a5a00;background:#fdf6e6}
+.bdg.a{color:#1a7f5a;background:#eaf7f0}
+.bdg.r{color:#b42318;background:#fef3f3}
+.bdg.s{color:#5b6675;background:#eef2f7}
+.bdg.e{color:#8a94a3;background:#f2f4f6}
+
+/* 确认槽 */
+.slot{display:flex;align-items:center;gap:8px;font-size:11.5px;padding:6px 0;
+  border-bottom:1px dashed #f0f3f6}
+.slot:last-child{border-bottom:0}
+.slot .sn{font-family:ui-monospace,Menlo,monospace;font-size:10.5px;color:#2b3a4d;width:118px}
+.slot .bt{font-size:10px;color:#1a4fa0;background:#eaf1fb;border:1px solid #c9dcf5;
+  border-radius:5px;padding:2px 8px}
+.slot .bt.no{color:#8a94a3;background:#f4f6f9;border-color:#e4e8ed}
+.slot .mt{margin-left:auto;font-size:10px;color:#9aa3b0}
+
+.note{grid-column:1/-1;background:#fff;border:1px solid #dfe4ea;border-radius:9px;
+  padding:15px 18px;font-size:12.5px;color:#55636f;line-height:1.8;margin-top:2px}
+.note b{color:#1a2332;display:block;margin-bottom:5px;font-size:13px}
+.note .c{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin-top:9px}
+.note .c div{font-size:11.5px}
+.note .c i{display:block;font-style:normal;color:#1a4fa0;font-weight:600;margin-bottom:2px}
+</style></head><body>
+<div class="wrap">
+
+  <div class="sum2">
+    <b>9</b><span>种回复风格</span><i></i>
+    <b>6</b><span>个设置 Tab</span><i></i>
+    <b class="z">74 / 74</b><span>核心逻辑单测</span><i></i>
+    <b class="s">append-only</b><span>审计 + 确认槽</span>
+    <em>风格只改表达方式，不改任务要求与事实准确性</em>
+  </div>
+
+  <!-- 设置页 -->
+  <div class="pane">
+    <div class="ph"><h3>设置页「个性化」· 关于你与风格 <span style="font-size:10.5px;font-weight:400;color:#9aa3b0">（示意数据）</span></h3><span class="n">dsh-soul</span></div>
+    <div class="set">
+      <div class="rail">
+        <a class="on">关于你与风格</a>
+        <a>人设卡</a>
+        <a>人设预设库</a>
+        <a>记忆与演化</a>
+        <a>行为偏好</a>
+        <a>迁移与兼容</a>
+      </div>
+      <div class="form">
+        <div class="row2">
+          <div class="fld"><label>昵称 · ≤50</label><div class="inp ph2">示例称呼</div></div>
+          <div class="fld"><label>职业 / 身份 · ≤50</label><div class="inp ph2">示例身份</div></div>
+        </div>
+        <div class="fld"><label>简介 · ≤500</label><div class="inp ph2">一句话说明你希望被如何配合……</div></div>
+
+        <div class="fld">
+          <label>回复风格 · 9 选 1</label>
+          <div class="sel"><span class="cv">高效务实 Pragmatic &amp; Efficient</span><span class="ar">▼</span></div>
+          <div class="hint">default / professional / friendly / straight / whimsical / pragmatic / roast / coaching / humorous（v2 新增第 9 种）</div>
+        </div>
+
+        <div class="row2">
+          <div class="fld">
+            <label>标题与列表</label>
+            <div class="segs"><span class="seg on">default</span><span class="seg">more</span><span class="seg">less</span></div>
+          </div>
+          <div class="fld">
+            <label>表情符号</label>
+            <div class="segs"><span class="seg on">default</span><span class="seg">more</span><span class="seg">less</span></div>
+          </div>
+        </div>
+
+        <div class="fld">
+          <label>输出语言</label>
+          <div class="segs"><span class="seg on">zh</span><span class="seg">en</span></div>
+        </div>
+
+        <div class="fld"><label>自定义指令 · ≤2000</label><div class="inp ph2">按内容本身决定详略；结论先行……</div></div>
+
+        <div class="prev">
+          <div class="hd">当前生效提示词（只读·所见即注入）<span class="o">3 段 · 示意</span></div>
+          <pre><span class="g">▸ 全局注记</span> 风格 ≤ 任务指令 / 准确性 / 安全
+<span class="k">▸ soul:persona</span> <span class="d">(order 0.1)</span>  昵称 / 风格段 / 特质修饰 / 语言 / 自定义指令 / 人设卡层
+<span class="k">▸ soul:memory</span>  <span class="d">(order 0.5)</span>  记忆段（取文件头，头截断 injectMaxChars）
+<span class="d">惰性注册：保存后随下一次回复生效，无需重启</span></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 记忆与演化 -->
+  <div class="pane">
+    <div class="ph"><h3>记忆与演化 <span style="font-size:10.5px;font-weight:400;color:#9aa3b0">（示意数据）</span></h3><span class="n">dsh-soul</span></div>
+
+    <div class="blk">
+      <h4>记忆文件状态</h4>
+      <div class="mrow"><span class="fn">global.md</span>
+        <span class="bar"><i style="width:38%"></i></span><span class="v">示意 · 未超限</span></div>
+      <div class="mrow"><span class="fn">&lt;card-slug&gt;.md</span>
+        <span class="bar"><i class="warn" style="width:96%"></i></span><span class="v warn">超 maxBytes → 拒绝写入</span></div>
+      <div class="hint">写入超过 maxBytes 时直接拒绝并报错，不静默截断已有记忆。</div>
+    </div>
+
+    <div class="blk">
+      <h4>审计 · soul-audit.jsonl（append-only）</h4>
+      <div class="aul">
+        <div class="arow"><span class="ts">T0</span><span class="tl">set_persona</span><span class="tg">style → roast</span><span class="bdg a">applied</span></div>
+        <div class="arow"><span class="ts">T1</span><span class="tl">soul_update</span><span class="tg">nickname</span><span class="bdg p">pending</span></div>
+        <div class="arow"><span class="ts">T2</span><span class="tl">memory_rewrite</span><span class="tg">global.md</span><span class="bdg r">rejected</span></div>
+        <div class="arow"><span class="ts">T3</span><span class="tl">soul_update</span><span class="tg">customInstructions</span><span class="bdg s">superseded</span></div>
+        <div class="arow"><span class="ts">T4</span><span class="tl">set_persona</span><span class="tg">language → en</span><span class="bdg e">expired</span></div>
+      </div>
+      <div class="hint">条目 {ts, sessionId, actor, tool, target, oldHash, newText, status, source}；jsonl 只追加，旧行永不改写。</div>
+    </div>
+
+    <div class="blk">
+      <h4>确认槽（按 tool 分槽）</h4>
+      <div class="slot"><span class="sn">set_persona</span><span class="bt">确认</span><span class="bt no">拒绝</span><span class="mt">1 条待处理</span></div>
+      <div class="slot"><span class="sn">soul_update</span><span class="bt">确认</span><span class="bt no">拒绝</span><span class="mt">空</span></div>
+      <div class="slot"><span class="sn">memory_rewrite</span><span class="bt">确认</span><span class="bt no">拒绝</span><span class="mt">空</span></div>
+    </div>
+  </div>
+
+  <div class="note">
+    <b>人设由「模型生成」降级为「确定性校验 + 人工确认」，四条硬边界</b>
+    <div class="c">
+      <div><i>整单拒绝</i>配置字段走白名单 + 类型 + 长度 + 枚举，未知字段整单拒绝并返回字段级错误，不半吞。</div>
+      <div><i>超限即拒写</i>记忆写入超过 maxBytes 直接报错，不静默截断；注入只取文件头并受 injectMaxChars 约束。</div>
+      <div><i>确认槽</i>人设改动落到 pending，需确认才 applied，可 rejected / superseded / expired，模型不能自行生效。</div>
+      <div><i>可回滚审计</i>append-only jsonl 记录每次变更的 oldHash / newText / status，逐条可核、可还原。</div>
+    </div>
+  </div>
+
+</div>
+</body></html>
